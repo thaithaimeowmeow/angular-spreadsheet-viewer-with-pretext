@@ -30,7 +30,13 @@ export class App {
   protected readonly sheets = signal<string[]>([]);
   protected readonly activeSheet = signal(0);
   protected readonly store = signal<SheetSource | null>(null);
-  /** Per sheet: wrap was switched off automatically once; never again after the user decides. */
+  /**
+   * Wrap state per sheet: the user's choice for a sheet wins; sheets the user has not toggled use
+   * the last choice (`wrapPref`), except that very large sheets start with wrap off.
+   */
+  private readonly wrapBySheet = new Map<number, boolean>();
+  private wrapPref = true;
+  /** Wrap was switched off automatically for the current sheet. */
   private autoWrapDone = false;
   protected readonly status = signal<Status>('idle');
   protected readonly progress = signal(0);
@@ -108,6 +114,7 @@ export class App {
     this.activeSheet.set(0);
     this.store()?.dispose();
     this.store.set(null);
+    this.wrapBySheet.clear();
     this.selection.set(null);
     this.error.set('');
     this.startedAt = performance.now();
@@ -121,6 +128,8 @@ export class App {
     this.colCount.set(0);
     this.selection.set(null);
     this.autoWrapDone = false;
+    // Restore this sheet's wrap state before the session starts, so worker and grid agree on it.
+    this.wrap.set(this.wrapBySheet.get(index) ?? this.wrapPref);
     this.startedAt = performance.now();
     const job = ++this.job;
     const wrap = this.wrap();
@@ -151,6 +160,13 @@ export class App {
     let i = 0;
     while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
     return `${n.toFixed(i ? 1 : 0)} ${units[i]}`;
+  }
+
+  /** The user toggled "Wrap text": remember it for this sheet and as the default for others. */
+  protected setWrap(on: boolean) {
+    this.wrapPref = on;
+    this.wrapBySheet.set(this.activeSheet(), on);
+    this.wrap.set(on);
   }
 
   // ------------------------------------------------------------ search
@@ -238,7 +254,7 @@ export class App {
       case 'grow':
         this.rowCount.set(msg.rowCount);
         this.colCount.set(msg.colCount);
-        if (!this.autoWrapDone && msg.rowCount > AUTO_NOWRAP_ROWS && this.wrap()) {
+        if (!this.autoWrapDone && msg.rowCount > AUTO_NOWRAP_ROWS && this.wrap() && !this.wrapBySheet.has(this.activeSheet())) {
           this.autoWrapDone = true;
           this.wrap.set(false);
           this.showNotice(`Wrap text turned off for this large sheet (over ${AUTO_NOWRAP_ROWS.toLocaleString()} rows). Turn it on any time.`);

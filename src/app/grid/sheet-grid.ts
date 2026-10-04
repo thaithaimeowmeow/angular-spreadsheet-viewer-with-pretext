@@ -148,6 +148,10 @@ export class SheetGrid {
 
   /** New sheet session: reset view state and subscribe to the worker's pushes. */
   private attach(source: SheetSource) {
+    // A width update queued for the previous sheet must not reach this one.
+    clearTimeout(this.layoutTimer);
+    this.layoutTimer = 0;
+    this.resizing = this.resizingRow = null;
     this.heights.reset();
     this.rowOverrides.clear();
     this.viewerCell = null;
@@ -228,7 +232,7 @@ export class SheetGrid {
     clearTimeout(this.layoutTimer);
     const send = () => {
       this.layoutTimer = 0;
-      this.source().setLayout(this.colWidths, this.wrapOn);
+      if (this.widthsReady) this.source().setLayout(this.colWidths, this.wrapOn);
     };
     if (immediate) send();
     else this.layoutTimer = setTimeout(send, LAYOUT_THROTTLE_MS);

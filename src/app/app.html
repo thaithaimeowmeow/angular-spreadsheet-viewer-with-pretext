@@ -39,7 +39,7 @@
     }
 
     <label class="toggle">
-      <input type="checkbox" [checked]="wrap()" (change)="wrap.set($any($event.target).checked)" />
+      <input type="checkbox" [checked]="wrap()" (change)="setWrap($any($event.target).checked)" />
       Wrap text
     </label>
   </header>
