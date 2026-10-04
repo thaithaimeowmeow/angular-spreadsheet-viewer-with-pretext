@@ -1,0 +1,239 @@
+:host {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--grid-bg);
+  contain: strict;
+}
+
+.scroller {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  outline: none;
+}
+
+.spacer {
+  width: 1px;
+  height: 1px;
+}
+
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.body {
+  position: absolute;
+  top: 24px;
+  right: 0;
+  bottom: 0;
+}
+
+/* Font metrics must match text-metrics.ts (CELL_FONT, LINE_HEIGHT, PAD_X/PAD_Y, BORDER). */
+.cell {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  padding: 3px 6px;
+  border-right: 1px solid var(--grid-line);
+  border-bottom: 1px solid var(--grid-line);
+  font: 13px Arial, Helvetica, sans-serif;
+  line-height: 18px;
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  color: var(--cell-fg);
+  will-change: transform;
+}
+
+.cell.num {
+  text-align: right;
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
+}
+
+.selection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  border: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.col-heads,
+.row-heads,
+.corner {
+  position: absolute;
+  top: 0;
+  background: var(--head-bg);
+  color: var(--head-fg);
+  font: 12px system-ui, sans-serif;
+}
+
+.col-heads {
+  right: 0;
+  height: 24px;
+  border-bottom: 1px solid var(--head-line);
+}
+
+.row-heads {
+  left: 0;
+  top: 24px;
+  bottom: 0;
+  border-right: 1px solid var(--head-line);
+}
+
+.corner {
+  left: 0;
+  height: 24px;
+  border-right: 1px solid var(--head-line);
+  border-bottom: 1px solid var(--head-line);
+}
+
+.col-head,
+.row-head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--head-line);
+  border-bottom: 1px solid var(--head-line);
+  overflow: hidden;
+}
+
+.col-head {
+  height: 24px;
+}
+
+.row-head {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-head.active,
+.row-head.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--head-bg));
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.resize:hover,
+.resize:active {
+  background: var(--accent);
+  opacity: 0.6;
+}
+
+:host(.nowrap) .cell {
+  white-space: pre;
+}
+
+.row-resize {
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 8px;
+  cursor: row-resize;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.row-resize:hover,
+.row-resize:active {
+  background: var(--accent);
+  opacity: 0.6;
+}
+
+.viewer {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-height: 80px;
+  background: var(--grid-bg);
+  color: var(--cell-fg);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  overflow: hidden;
+}
+
+.viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 4px 12px;
+  border-bottom: 1px solid var(--head-line);
+  background: var(--head-bg);
+  color: var(--accent);
+  font: 12px system-ui, sans-serif;
+}
+
+.viewer-head button {
+  border: 0;
+  background: none;
+  color: var(--head-fg);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.viewer-body {
+  flex: 1;
+  overflow: auto;
+  padding: 10px 12px;
+  font: 13px Arial, Helvetica, sans-serif;
+  line-height: 18px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  user-select: text;
+}
+
+/* Multi-cell selection fill; the active cell keeps its own outline (.selection). */
+.range {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* Search hits: background only, so glyph widths (and pretext's measurements) are unchanged. */
+mark {
+  background: var(--mark-bg);
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+
+.cell.current {
+  box-shadow: inset 0 0 0 2px var(--mark-current);
+}
+
+.cell.current mark {
+  background: var(--mark-current);
+  color: #000;
+}

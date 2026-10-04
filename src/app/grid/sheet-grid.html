@@ -1,0 +1,70 @@
+@let v = view();
+<div #scroller class="scroller" tabindex="0"
+     (scroll)="onScroll()" (pointerdown)="onPointerDown($event)" (pointermove)="onPointerMove($event)"
+     (pointerup)="onPointerUp($event)" (pointercancel)="onPointerUp($event)" (dblclick)="onDoubleClick($event)"
+     (keydown)="onKeyDown($event)">
+  <div #spacer class="spacer"></div>
+</div>
+
+<!-- Overlay drawn on top of the native scroller; only visible cells exist in the DOM. -->
+<div class="layer" [style.width.px]="v.viewW" [style.height.px]="v.viewH">
+  <div class="body" [style.left.px]="v.gutterW">
+    @for (cell of v.cells; track $index) {
+      <!-- Kept on one line: whitespace inside a pre-wrap cell would render. -->
+      <div class="cell" [class.num]="cell.num" [class.current]="cell.current"
+           [style.transform]="'translate(' + cell.x + 'px,' + cell.y + 'px)'"
+           [style.width.px]="cell.w" [style.height.px]="cell.h">@if (cell.parts) {@for (p of cell.parts; track $index) {@if (p.hit) {<mark>{{ p.t }}</mark>} @else {{{ p.t }}}}} @else {{{ cell.text }}}</div>
+    }
+    @if (v.selection; as s) {
+      <div class="range"
+           [style.transform]="'translate(' + s.x + 'px,' + s.y + 'px)'"
+           [style.width.px]="s.w" [style.height.px]="s.h"></div>
+    }
+    @if (v.active; as s) {
+      <div class="selection"
+           [style.transform]="'translate(' + s.x + 'px,' + s.y + 'px)'"
+           [style.width.px]="s.w" [style.height.px]="s.h"></div>
+    }
+  </div>
+
+  <div class="col-heads" [style.left.px]="v.gutterW">
+    @for (h of v.colHeads; track $index) {
+      <div class="col-head" [class.active]="h.key >= v.selC0 && h.key <= v.selC1"
+           [style.transform]="'translateX(' + h.pos + 'px)'" [style.width.px]="h.size">
+        {{ h.label }}
+        <span class="resize" title="Drag to resize · double-click to auto-fit"
+              (pointerdown)="onResizeStart($event, h.key)" (pointermove)="onResizeMove($event)"
+              (pointerup)="onResizeEnd()" (pointercancel)="onResizeEnd()"
+              (dblclick)="onAutoFit(h.key)"></span>
+      </div>
+    }
+  </div>
+
+  <div class="row-heads" [style.width.px]="v.gutterW">
+    @for (h of v.rowHeads; track $index) {
+      <div class="row-head" [class.active]="h.key >= v.selR0 && h.key <= v.selR1"
+           [style.transform]="'translateY(' + h.pos + 'px)'" [style.height.px]="h.size">
+        {{ h.label }}
+        <span class="row-resize" title="Drag to resize · double-click to fit all text"
+              (pointerdown)="onRowResizeStart($event, h.key)" (pointermove)="onRowResizeMove($event)"
+              (pointerup)="onRowResizeEnd()" (pointercancel)="onRowResizeEnd()"
+              (dblclick)="onRowAutoFit(h.key)"></span>
+      </div>
+    }
+  </div>
+
+  <div class="corner" [style.width.px]="v.gutterW" title="Select all (Ctrl+A)"></div>
+</div>
+
+<!-- Full text of a cell (double-click or F2); follows the cell while scrolling. -->
+@if (v.viewer; as vw) {
+  <div class="viewer" role="dialog" [attr.aria-label]="'Cell ' + vw.ref"
+       [style.left.px]="vw.x" [style.top.px]="vw.y" [style.width.px]="vw.w" [style.max-height.px]="vw.maxH"
+       (keydown.escape)="closeViewer()">
+    <div class="viewer-head">
+      <strong>{{ vw.ref }}</strong>
+      <button type="button" aria-label="Close" (click)="closeViewer()">✕</button>
+    </div>
+    <div class="viewer-body">@if (vw.parts) {@for (p of vw.parts; track $index) {@if (p.hit) {<mark>{{ p.t }}</mark>} @else {{{ p.t }}}}} @else {{{ vw.text }}}</div>
+  </div>
+}

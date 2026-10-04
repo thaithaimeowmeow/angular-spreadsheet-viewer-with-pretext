@@ -1,0 +1,109 @@
+<div class="app" (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+  <header class="toolbar">
+    <div class="brand">
+      <span class="logo">▦</span>
+      <strong>Sheet Preview</strong>
+    </div>
+
+    <label class="btn primary">
+      Open file
+      <input type="file" [accept]="accept" hidden (change)="onPick($event)" />
+    </label>
+
+    @if (fileName()) {
+      <span class="file">{{ fileName() }} <small>{{ formatBytes(fileSize()) }}@if (format()) { · {{ format() }} }</small></span>
+    }
+
+    <span class="spacer"></span>
+
+    @if (store()) {
+      <!-- Icons: Lucide (ISC license), inlined -->
+      <button type="button" class="icon-btn" [class.on]="searchOpen()" title="Search (Ctrl+F)" aria-label="Search"
+              (click)="toggleSearch()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+    }
+
+    @if (store()) {
+      <span class="stat">{{ rowCount().toLocaleString() }} rows × {{ colCount() }} cols</span>
+      @if (wrap() && layoutProgress() < 1) {
+        <span class="stat" title="Height estimates for off-screen rows">estimating {{ (layoutProgress() * 100).toFixed(0) }}%</span>
+      }
+      @if (wrap()) {
+        <span class="stat" title="Time to re-wrap the visible rows">viewport layout {{ lastLayoutMs() }} ms</span>
+      }
+    }
+    @if (statusLabel()) {
+      <span class="stat" [class.busy]="loading()">{{ statusLabel() }}</span>
+    }
+
+    <label class="toggle">
+      <input type="checkbox" [checked]="wrap()" (change)="wrap.set($any($event.target).checked)" />
+      Wrap text
+    </label>
+  </header>
+
+  @if (loading()) {
+    <div class="progress"><div [style.width.%]="progress() * 100"></div></div>
+  }
+
+  @if (searchOpen()) {
+    <div class="search-bar" role="search">
+      <span class="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <input #searchInput type="text" placeholder="Search all cells — Enter: next · Shift+Enter: previous · Esc: close"
+             aria-label="Search all cells" [value]="searchText()"
+             (input)="onSearchInput($any($event.target).value)" (keydown)="onSearchKey($event)" />
+      <span class="search-count" aria-live="polite">{{ searchLabel() }}</span>
+      <button type="button" class="icon-btn" title="Previous match (Shift+Enter)" aria-label="Previous match" (click)="find(-1)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+      </button>
+      <button type="button" class="icon-btn" title="Next match (Enter)" aria-label="Next match" (click)="find(1)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <button type="button" class="icon-btn" title="Close (Esc)" aria-label="Close search" (click)="closeSearch()">✕</button>
+    </div>
+  }
+
+  <div class="formula-bar">
+    <span class="ref">{{ selection()?.ref ?? '' }}</span>
+    <span class="fx">fx</span>
+    <span class="value">{{ selection()?.value ?? '' }}</span>
+  </div>
+
+  <main class="stage">
+    @if (store(); as s) {
+      <app-sheet-grid class="grid" [source]="s" [wrap]="wrap()" (selectionChange)="selection.set($event)"
+                      (notice)="showNotice($event)" />
+    } @else {
+      <div class="empty" [class.drag]="dragging()">
+        @if (error()) {
+          <p class="error">{{ error() }}</p>
+        } @else if (loading()) {
+          <p>{{ statusLabel() }}</p>
+        } @else {
+          <p class="big">Drop a spreadsheet here</p>
+          <p>.xlsx · .xlsm · .xls · .ods · .csv · .tsv · .txt</p>
+          <p>Parsed and kept in a Web Worker; only the rows on screen reach the page. Visible wrapped
+             text is measured with <code>&#64;chenglou/pretext</code> — no DOM reflow.</p>
+        }
+      </div>
+    }
+    @if (store() && error()) {
+      <div class="toast">{{ error() }}</div>
+    } @else if (notice()) {
+      <div class="toast info" role="status">{{ notice() }}</div>
+    }
+  </main>
+
+  @if (sheets().length) {
+    <nav class="tabs">
+      @for (name of sheets(); track $index) {
+        <button type="button" [class.active]="$index === activeSheet()" (click)="selectSheet($index)">{{ name }}</button>
+      }
+    </nav>
+  }
+</div>
